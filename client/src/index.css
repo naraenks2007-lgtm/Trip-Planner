@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Light mode (default) */
+:root {
+    --bg-primary: #f3f4f6;
+    --bg-secondary: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --sidebar-bg: #1f2937;
+    --sidebar-text: #ffffff;
+}
+
+/* Dark mode */
+.dark {
+    --bg-primary: #111827;
+    --bg-secondary: #1f2937;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --border-color: #374151;
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #f9fafb;
+}
