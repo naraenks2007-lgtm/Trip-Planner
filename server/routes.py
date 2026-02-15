@@ -225,3 +225,56 @@ def update_profile():
 def logout():
     # In a real app, you'd clear session/token
     return jsonify({"message": "Logout successful"}), 200
+
+
+# Overpass API endpoint for real-time place data
+@api.route('/places', methods=['GET'])
+def get_places_overpass():
+    """
+    Fetch real-time places from Overpass API based on coordinates and type.
+    Used by MapView component to display markers on the map.
+    """
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    place_type = request.args.get('type')
+    
+    if not lat or not lon or not place_type:
+        return jsonify({"error": "Missing required parameters: lat, lon, type"}), 400
+    
+    try:
+        # Determine the Overpass query tag based on place type
+        if place_type == "hotel":
+            tag = '["tourism"="hotel"]'
+        elif place_type == "restaurant":
+            tag = '["amenity"="restaurant"]'
+        elif place_type == "attraction":
+            tag = '["tourism"="attraction"]'
+        else:
+            # Default to attraction for unknown types
+            tag = '["tourism"="attraction"]'
+        
+        # Build Overpass query
+        # Search in a small radius around the given coordinates
+        lat_f = float(lat)
+        lon_f = float(lon)
+        radius = 0.02  # approximately 2km radius
+        
+        query = f"""
+        [out:json];
+        node{tag}({lat_f - radius},{lon_f - radius},{lat_f + radius},{lon_f + radius});
+        out;
+        """
+        
+        # Query Overpass API
+        overpass_url = "https://overpass-api.de/api/interpreter"
+        response = requests.get(overpass_url, params={'data': query}, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify(data), 200
+        else:
+            return jsonify({"error": "Failed to fetch data from Overpass API", "elements": []}), 500
+            
+    except Exception as e:
+        print(f"Error fetching from Overpass API: {e}")
+        return jsonify({"error": str(e), "elements": []}), 500

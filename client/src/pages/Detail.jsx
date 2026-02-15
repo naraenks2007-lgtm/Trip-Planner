@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, MapPin, Phone, Clock, DollarSign, Users, ExternalLink } from 'lucide-react';
+import { ChevronLeft, MapPin, Phone, Clock, DollarSign, Users, ExternalLink, Heart } from 'lucide-react';
 import MapComponent from '../components/MapView';
 import { motion } from 'framer-motion';
+import { useFavorites } from '../hooks/useFavorites';
 
 function Detail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [place, setPlace] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { addFavorite, removeFavorite, isFavorite } = useFavorites();
 
     useEffect(() => {
         fetch(`http://127.0.0.1:5000/api/places/${id}`)
@@ -29,6 +31,8 @@ function Detail() {
 
     return (
         <div style={{ paddingBottom: '2rem' }}>
+            {/* Added top padding for mobile menu */}
+            <div style={{ height: '60px' }}></div>
             {/* Header */}
             <div className="glass-panel" style={{
                 position: 'fixed',
@@ -47,9 +51,37 @@ function Detail() {
                 <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'white', display: 'flex' }}>
                     <ChevronLeft size={24} />
                 </button>
-                <h1 className="text-lg font-bold" style={{ color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
+                <h1 className="text-lg font-bold" style={{ color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0, flex: 1 }}>
                     {place.name}
                 </h1>
+                {/* Favorite button */}
+                <button
+                    onClick={() => {
+                        if (isFavorite(place.id)) {
+                            removeFavorite(place.id);
+                        } else {
+                            addFavorite(place.id);
+                        }
+                    }}
+                    style={{
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <Heart
+                        size={20}
+                        fill={isFavorite(place.id) ? '#ef4444' : 'none'}
+                        color={isFavorite(place.id) ? '#ef4444' : 'white'}
+                    />
+                </button>
             </div>
 
             <motion.div

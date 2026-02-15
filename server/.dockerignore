@@ -1,0 +1,8 @@
+__pycache__
+venv
+.env
+.git
+.gitignore
+trip_planner.db
+instance/
+*.pyc

@@ -3,6 +3,12 @@ services:
     build: ./server
     ports:
       - "5000:5000"
+    volumes:
+      - ./server:/app
+      - /app/__pycache__
+      - /app/venv
+    environment:
+      - FLASK_DEBUG=1
 
   frontend:
     build: ./client
@@ -10,3 +16,6 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+    volumes:
+      - ./client:/app
+      - /app/node_modules
