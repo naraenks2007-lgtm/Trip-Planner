@@ -7,10 +7,12 @@ services:
       - "5000:5000"
     volumes:
       - ./server:/app # hot-reload python changes
-      - /app/__pycache__ # keep compiled cache inside container
+      - /app/__pycache__
+      - db_data:/app/db # persist SQLite DB across rebuilds
     environment:
       - FLASK_DEBUG=1
       - PYTHONUNBUFFERED=1
+      - DB_PATH=/app/db/trip_planner.db
     networks:
       - tripplanner
     healthcheck:
@@ -28,17 +30,20 @@ services:
       - "5173:5173"
     depends_on:
       backend:
-        condition: service_healthy # wait until Flask is ready
+        condition: service_healthy
     volumes:
-      - ./client:/app # hot-reload React changes
-      - /app/node_modules # keep node_modules inside container
+      - ./client:/app
+      - /app/node_modules
     environment:
-      # When running in Docker, the frontend must reach the backend
-      # by container/service name, not 127.0.0.1
-      - VITE_API_URL=http://backend:5000
+      # VITE_BACKEND_URL is read by vite.config.js (runs inside Docker, can reach 'backend')
+      # It is NOT bundled into client code — the browser uses relative /api/ paths via Vite proxy
+      - VITE_BACKEND_URL=http://backend:5000
     networks:
       - tripplanner
 
 networks:
   tripplanner:
     driver: bridge
+
+volumes:
+  db_data:
