@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { useFavorites } from '../hooks/useFavorites';
 import StarRating from '../components/StarRating';
 import { useGeolocation, calculateDistance, formatDistance } from '../hooks/useGeolocation';
+import LocationBar from '../components/LocationBar';
+import API_BASE from '../config/api';
 
 function ListPage() {
     const { slug } = useParams();
@@ -17,11 +19,18 @@ function ListPage() {
     const [crowdFilter, setCrowdFilter] = useState('all');
     const [sortBy, setSortBy] = useState('name');
     const [ratingFilter, setRatingFilter] = useState('all');
+    // Location-based state
+    const [locationInfo, setLocationInfo] = useState(null); // { lat, lon, label }
+    const [liveLoading, setLiveLoading] = useState(false);
+    const [liveError, setLiveError] = useState('');
     const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites();
     const { location, requestLocation, loading: locationLoading } = useGeolocation();
 
-    useEffect(() => {
-        fetch(`http://127.0.0.1:5000/api/categories/${slug}/places`)
+    // ── Static DB fetch (default) ─────────────────────────────────────────────
+    const fetchDefaultPlaces = () => {
+        setLoading(true);
+        setLiveError('');
+        fetch(`${API_BASE}/api/categories/${slug}/places`)
             .then(res => res.json())
             .then(data => {
                 setPlaces(data);
@@ -32,24 +41,83 @@ function ListPage() {
                 console.error(err);
                 setLoading(false);
             });
+    };
+
+    // ── Live OSM fetch ────────────────────────────────────────────────────────
+    // cityName set  → /api/places-by-city  (Nominatim keyword search — real shops)
+    // cityName null → /api/nearby-places   (Overpass GPS bounding box)
+    const fetchLivePlaces = async (info) => {
+        setLiveLoading(true);
+        setLiveError('');
+        try {
+            let url;
+            if (info.cityName) {
+                // Manual city entry — use Nominatim keyword search for real named places
+                url = `${API_BASE}/api/places-by-city?city=${encodeURIComponent(info.cityName)}&slug=${slug}&radius=8`;
+            } else {
+                // GPS location — use Overpass bounding box
+                url = `${API_BASE}/api/nearby-places?lat=${info.lat}&lon=${info.lon}&slug=${slug}&radius=5`;
+            }
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch places');
+            if (!data.length) {
+                setLiveError('No places found. Showing default results.');
+                fetchDefaultPlaces();
+                return;
+            }
+            setCategoryName(data[0]?.category_name || categoryName);
+            setPlaces(data);
+            setLoading(false);
+        } catch (e) {
+            console.error(e);
+            setLiveError(`Could not fetch live data: ${e.message}. Showing default results.`);
+            fetchDefaultPlaces();
+        } finally {
+            setLiveLoading(false);
+        }
+    };
+
+    // ── Handle LocationBar selection ──────────────────────────────────────────
+    const handleLocationSelect = (info) => {
+        if (!info) {
+            // Reset to default
+            setLocationInfo(null);
+            fetchDefaultPlaces();
+            return;
+        }
+        setLocationInfo(info);
+        fetchLivePlaces(info);   // pass full info object — contains cityName flag
+    };
+
+    // ── On slug change, fetch default places ──────────────────────────────────
+    useEffect(() => {
+        setLocationInfo(null);
+        fetchDefaultPlaces();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slug]);
 
-    // Calculate distances and filter places
+    // ── Derive geolocation coords for distance calc ───────────────────────────
+    // Use locationInfo if set, else the useGeolocation hook's position
+    const effectiveLocation = locationInfo
+        ? { latitude: locationInfo.lat, longitude: locationInfo.lon }
+        : location;
+    // Calculate distances using effectiveLocation
     const placesWithDistance = useMemo(() => {
-        if (!location || !places.length) return places;
+        if (!effectiveLocation || !places.length) return places;
 
         return places.map(place => ({
             ...place,
             distance: place.latitude && place.longitude
                 ? calculateDistance(
-                    location.latitude,
-                    location.longitude,
+                    effectiveLocation.latitude,
+                    effectiveLocation.longitude,
                     place.latitude,
                     place.longitude
                 )
                 : null
         }));
-    }, [places, location]);
+    }, [places, effectiveLocation]);
 
     // Filter places based on search query, price, crowd level, and rating
     const filteredPlaces = placesWithDistance
@@ -153,6 +221,39 @@ function ListPage() {
             </div>
 
             <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* ── LocationBar ── */}
+                <LocationBar
+                    onLocationSelect={handleLocationSelect}
+                    activeLabel={locationInfo?.label}
+                />
+
+                {/* Live fetch loading overlay */}
+                {liveLoading && (
+                    <div style={{
+                        textAlign: 'center',
+                        color: '#c4b5fd',
+                        fontSize: '0.85rem',
+                        padding: '0.5rem',
+                        background: 'rgba(99,102,241,0.1)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(99,102,241,0.3)'
+                    }}>
+                        🔍 Fetching live places near {locationInfo?.label}…
+                    </div>
+                )}
+                {liveError && (
+                    <div style={{
+                        textAlign: 'center',
+                        color: '#fca5a5',
+                        fontSize: '0.82rem',
+                        padding: '0.5rem',
+                        background: 'rgba(239,68,68,0.1)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(239,68,68,0.3)'
+                    }}>
+                        {liveError}
+                    </div>
+                )}
                 {/* Search Bar */}
                 <div style={{ position: 'relative' }}>
                     <input
@@ -262,15 +363,16 @@ function ListPage() {
                         <option value="name" style={{ background: '#1f2937' }}>Name (A-Z)</option>
                         <option value="name-desc" style={{ background: '#1f2937' }}>Name (Z-A)</option>
                         <option value="rating" style={{ background: '#1f2937' }}>Highest Rated</option>
-                        {location && <option value="distance" style={{ background: '#1f2937' }}>Nearest First</option>}
+                        {effectiveLocation && <option value="distance" style={{ background: '#1f2937' }}>Nearest First</option>}
                         <option value="crowd-low" style={{ background: '#1f2937' }}>Crowd (Low to High)</option>
                         <option value="crowd-high" style={{ background: '#1f2937' }}>Crowd (High to Low)</option>
                     </select>
 
-                    {/* Location Button */}
+                    {/* Location Button (hook-based GPS for distance only) */}
                     <button
                         onClick={requestLocation}
                         disabled={locationLoading}
+                        title="Use GPS for distance calculation only"
                         style={{
                             padding: '0.5rem 1rem',
                             borderRadius: '8px',
@@ -288,7 +390,7 @@ function ListPage() {
                         }}
                     >
                         <Navigation size={16} color={location ? '#10b981' : 'white'} />
-                        {locationLoading ? 'Getting location...' : location ? 'Location On' : 'Use My Location'}
+                        {locationLoading ? 'Getting location...' : location ? 'GPS On' : 'GPS Distance'}
                     </button>
 
                     {/* Active filter count */}

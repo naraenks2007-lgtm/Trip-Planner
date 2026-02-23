@@ -88,6 +88,11 @@ body {
     }
 }
 
+.spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
 /* Shimmer animation for skeleton loaders */
 @keyframes shimmer {
     0% {

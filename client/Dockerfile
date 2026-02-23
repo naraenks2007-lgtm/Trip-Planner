@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:20-slim
 
 WORKDIR /app
 
@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# --host makes Vite listen on 0.0.0.0 so it's reachable from outside the container
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

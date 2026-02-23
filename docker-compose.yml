@@ -1,21 +1,44 @@
 services:
   backend:
-    build: ./server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     volumes:
-      - ./server:/app
-      - /app/__pycache__
-      - /app/venv
+      - ./server:/app # hot-reload python changes
+      - /app/__pycache__ # keep compiled cache inside container
     environment:
       - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+    networks:
+      - tripplanner
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/api/categories" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   frontend:
-    build: ./client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy # wait until Flask is ready
     volumes:
-      - ./client:/app
-      - /app/node_modules
+      - ./client:/app # hot-reload React changes
+      - /app/node_modules # keep node_modules inside container
+    environment:
+      # When running in Docker, the frontend must reach the backend
+      # by container/service name, not 127.0.0.1
+      - VITE_API_URL=http://backend:5000
+    networks:
+      - tripplanner
+
+networks:
+  tripplanner:
+    driver: bridge

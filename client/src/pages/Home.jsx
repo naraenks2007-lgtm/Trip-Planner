@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGeolocation } from '../hooks/useGeolocation';
 import LottieAnimation from '../components/LottieAnimation';
+import API_BASE from '../config/api';
 
 const iconMap = {
     'car': Car,
@@ -73,7 +74,7 @@ function Home() {
     };
 
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/api/categories')
+        fetch(`${API_BASE}/api/categories`)
             .then(res => res.json())
             .then(data => {
                 setCategories(data);
@@ -344,7 +345,7 @@ function Home() {
                     {categories.map(cat => {
                         const Icon = iconMap[cat.icon] || MapIcon;
                         return (
-                            <Link to={`/category/${cat.id}`} key={cat.id} style={{ textDecoration: 'none' }}>
+                            <Link to={`/category/${cat.slug}`} key={cat.id} style={{ textDecoration: 'none' }}>
                                 <motion.div
                                     variants={itemVariants}
                                     className="glass-card"
