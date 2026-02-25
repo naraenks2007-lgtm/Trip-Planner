@@ -108,7 +108,7 @@ function ListPage() {
 
         return places.map(place => ({
             ...place,
-            distance: place.latitude && place.longitude
+            distance: place.latitude !== null && place.longitude !== null
                 ? calculateDistance(
                     effectiveLocation.latitude,
                     effectiveLocation.longitude,
@@ -144,7 +144,11 @@ function ListPage() {
             if (sortBy === 'name') return a.name.localeCompare(b.name);
             if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
             if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-            if (sortBy === 'distance' && a.distance && b.distance) return a.distance - b.distance;
+            if (sortBy === 'distance') {
+                const dA = a.distance !== null ? a.distance : 999999;
+                const dB = b.distance !== null ? b.distance : 999999;
+                return dA - dB;
+            }
             if (sortBy === 'crowd-low') {
                 const order = { 'low': 1, 'medium': 2, 'moderate': 2, 'high': 3 };
                 const aLevel = order[a.crowd_level?.toLowerCase()] || 2;
@@ -526,7 +530,7 @@ function ListPage() {
                                         )}
 
                                         {/* Distance */}
-                                        {place.distance && (
+                                        {place.distance !== null && (
                                             <span style={{
                                                 fontSize: '0.75rem',
                                                 padding: '2px 8px',
@@ -543,6 +547,26 @@ function ListPage() {
                                             </span>
                                         )}
                                     </div>
+
+                                    {/* Real-time Bus Info */}
+                                    {place.real_time && (
+                                        <div style={{
+                                            marginTop: '0.75rem',
+                                            padding: '0.6rem',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            borderRadius: '8px',
+                                            borderLeft: '3px solid #c4b5fd',
+                                            fontSize: '0.8rem'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                                                <span style={{ color: '#c4b5fd', fontWeight: 600 }}>{place.real_time.provider}</span>
+                                                <span style={{ color: '#6ee7b7' }}>Next in {place.real_time.next_bus_m}m</span>
+                                            </div>
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                                {place.real_time.bus_type} • {place.real_time.seats_left} seats • Live
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </Link>

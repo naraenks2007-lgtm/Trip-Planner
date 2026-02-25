@@ -40,6 +40,7 @@ def _auto_seed():
         {'name': 'Car Rentals',    'slug': 'car-rentals',    'icon': 'car'},
         {'name': 'Bus Timings',    'slug': 'bus-timings',    'icon': 'bus'},
         {'name': 'Restaurants',    'slug': 'restaurants',    'icon': 'utensils'},
+        {'name': 'Hotels',         'slug': 'hotels',         'icon': 'hotel'},
         {'name': 'Tourist Places', 'slug': 'tourist-places', 'icon': 'map-marked-alt'},
         {'name': 'Trains',         'slug': 'trains',         'icon': 'train'},
         {'name': 'Flights',        'slug': 'flights',        'icon': 'plane'},

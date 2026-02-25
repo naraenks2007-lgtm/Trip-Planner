@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, MapPin, Phone, Clock, DollarSign, Users, ExternalLink, Heart } from 'lucide-react';
+import { ChevronLeft, MapPin, Phone, Clock, DollarSign, Users, ExternalLink, Heart, Star } from 'lucide-react';
 import MapComponent from '../components/MapView';
+import StarRating from '../components/StarRating';
 import { motion } from 'framer-motion';
 import { useFavorites } from '../hooks/useFavorites';
 
@@ -101,7 +102,12 @@ function Detail() {
                 )}
 
                 <div className="container" style={{ position: 'relative', zIndex: 2, marginTop: place.image_url ? '-60px' : '0' }}>
-                    <h1 className="text-2xl font-bold mb-2" style={{ color: 'white', marginBottom: '0.5rem' }}>{place.name}</h1>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+                        <div>
+                            <h1 className="text-2xl font-bold" style={{ color: 'white', marginBottom: '0.25rem' }}>{place.name}</h1>
+                            {place.rating && <StarRating rating={place.rating} size={18} />}
+                        </div>
+                    </div>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{place.description}</p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -127,7 +133,7 @@ function Detail() {
                             </div>
                         </div>
 
-                        {place.phone && (
+                        {place.phone && place.phone !== 'Not available' && place.phone !== 'N/A' && (
                             <div className="glass-card" style={{ padding: '1.5rem' }}>
                                 <div className="flex items-center gap-4">
                                     <div style={{ background: 'rgba(236, 72, 153, 0.2)', padding: '10px', borderRadius: '12px' }}>

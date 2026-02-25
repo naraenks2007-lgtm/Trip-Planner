@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Home, Map, Heart, User, LogOut, Settings, Compass, Car, Bus, Utensils, Map as MapIcon, Train, Plane } from 'lucide-react';
+import { Menu, X, Home, Map, Heart, User, LogOut, Settings, Compass, Car, Bus, Utensils, Map as MapIcon, Train, Plane, Hotel } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+import API_BASE from '../config/api';
 
 const iconMap = {
   'car': Car,
@@ -9,7 +11,8 @@ const iconMap = {
   'utensils': Utensils,
   'map-marked-alt': MapIcon,
   'train': Train,
-  'plane': Plane
+  'plane': Plane,
+  'hotel': Hotel
 };
 
 const Sidebar = () => {
@@ -25,7 +28,7 @@ const Sidebar = () => {
 
   // Fetch categories
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/categories')
+    fetch(`${API_BASE}/api/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(err => console.error("Failed to fetch categories", err));

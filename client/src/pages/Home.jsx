@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Bus, Utensils, Map as MapIcon, Search, User, MapPin, Heart, Train, Plane, Navigation } from 'lucide-react';
+import { Car, Bus, Utensils, Map as MapIcon, Search, User, MapPin, Heart, Train, Plane, Navigation, Hotel } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -13,7 +13,8 @@ const iconMap = {
     'utensils': Utensils,
     'map-marked-alt': MapIcon,
     'train': Train,
-    'plane': Plane
+    'plane': Plane,
+    'hotel': Hotel
 };
 
 function Home() {

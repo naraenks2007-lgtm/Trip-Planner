@@ -27,6 +27,7 @@ def migrate_database():
             {'name': 'Car Rentals', 'slug': 'car-rentals', 'icon': 'car'},
             {'name': 'Bus Timings', 'slug': 'bus-timings', 'icon': 'bus'},
             {'name': 'Restaurants', 'slug': 'restaurants', 'icon': 'utensils'},
+            {'name': 'Hotels', 'slug': 'hotels', 'icon': 'hotel'},
             {'name': 'Tourist Places', 'slug': 'tourist-places', 'icon': 'map-marked-alt'},
             {'name': 'Trains', 'slug': 'trains', 'icon': 'train'},
             {'name': 'Flights', 'slug': 'flights', 'icon': 'plane'}
@@ -323,8 +324,70 @@ def migrate_database():
             }
         ]
         
+        # Bus Timings
+        bus_cat = Category.query.filter_by(slug='bus-timings').first()
+        bus_timings = [
+            {
+                'name': 'Koyambedu (CMBT) - Platform 1',
+                'description': 'Main hub for government and private long-distance buses',
+                'price_fee': '₹50 - ₹800',
+                'crowd_level': 'High',
+                'location': 'Koyambedu',
+                'phone': '+91 44 2479 4700',
+                'opening_hours': '24/7',
+                'latitude': 13.0678,
+                'longitude': 80.2048,
+                'rating': 3.5,
+                'category_id': bus_cat.id
+            },
+            {
+                'name': 'MTC Local Bus Stand - T.Nagar',
+                'description': 'Main station for Chennai local city buses',
+                'price_fee': '₹5 - ₹50',
+                'crowd_level': 'High',
+                'location': 'T.Nagar',
+                'phone': '044-23455851',
+                'opening_hours': '4 AM - 11 PM',
+                'latitude': 13.0401,
+                'longitude': 80.2337,
+                'rating': 3.9,
+                'category_id': bus_cat.id
+            }
+        ]
+
+        # Hotels
+        hotels_cat = Category.query.filter_by(slug='hotels').first()
+        hotels = [
+            {
+                'name': 'ITC Grand Chola',
+                'description': 'Luxury hotel with regal Indian architecture and premium amenities',
+                'price_fee': '₹12000/night',
+                'crowd_level': 'Low',
+                'location': 'Guindy',
+                'phone': '+91 44 2220 0000',
+                'opening_hours': '24/7',
+                'latitude': 13.0116,
+                'longitude': 80.2215,
+                'rating': 4.9,
+                'category_id': hotels_cat.id
+            },
+            {
+                'name': 'The Residency Towers',
+                'description': 'Business hotel in the heart of the city',
+                'price_fee': '₹6000/night',
+                'crowd_level': 'Moderate',
+                'location': 'T Nagar',
+                'phone': '+91 44 2815 6363',
+                'opening_hours': '24/7',
+                'latitude': 13.0441,
+                'longitude': 80.2361,
+                'rating': 4.3,
+                'category_id': hotels_cat.id
+            }
+        ]
+
         # Add all places
-        all_places = car_rentals + restaurants + tourist_places + trains + flights
+        all_places = car_rentals + restaurants + tourist_places + trains + flights + bus_timings + hotels
         for place_data in all_places:
             place = Place(**place_data)
             db.session.add(place)

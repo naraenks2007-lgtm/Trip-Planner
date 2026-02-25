@@ -103,3 +103,40 @@ body {
         background-position: 200% 0;
     }
 }
+
+/* Responsiveness adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 0.5rem;
+    }
+
+    .glass-card {
+        padding: 0.75rem !important;
+    }
+
+    h2 {
+        font-size: 1.75rem !important;
+    }
+
+    .gradient-text {
+        font-size: 2rem !important;
+    }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
