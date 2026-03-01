@@ -80,23 +80,35 @@ function Profile() {
     };
 
     useEffect(() => {
-        // TEMPORARY: Using mock data to demonstrate glassmorphism effect
-        // TODO: Re-enable authentication after fixing CORS
-        const mockUser = {
-            id: 1,
-            name: 'Naraen',
-            email: 'naraenks2007@gmail.com',
-            phone: '+91 1234567890',
-            upi_id: 'naraen@upi'
-        };
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            setFormData({
+                name: parsedUser.name || '',
+                phone: parsedUser.phone || '',
+                upi_id: parsedUser.upi_id || ''
+            });
+            setLoading(false);
 
-        setUser(mockUser);
-        setFormData({
-            name: mockUser.name,
-            phone: mockUser.phone,
-            upi_id: mockUser.upi_id
-        });
-        setLoading(false);
+            // Optionally refresh profile from server
+            fetch(`http://127.0.0.1:5000/api/auth/profile?user_id=${parsedUser.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.error) {
+                        setUser(data);
+                        setFormData({
+                            name: data.name || '',
+                            phone: data.phone || '',
+                            upi_id: data.upi_id || ''
+                        });
+                        localStorage.setItem('user', JSON.stringify(data));
+                    }
+                })
+                .catch(err => console.error('Error fetching profile:', err));
+        } else {
+            navigate('/login');
+        }
     }, [navigate]);
 
     const handleLogout = async () => {
@@ -523,12 +535,28 @@ function Profile() {
                                         fontSize: '1rem',
                                         outline: 'none',
                                         boxSizing: 'border-box',
-                                        background: 'rgba(238, 13, 13, 0.9)',
+                                        background: 'rgba(255, 255, 255, 0.9)',
                                         color: '#1f2937'
                                     }}
                                 />
+                            ) : user.upi_id ? (
+                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ffffff', margin: 0 }}>{user.upi_id}</p>
                             ) : (
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ffffff', margin: 0 }}>{user.upi_id || 'Not set'}</p>
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.1)',
+                                        border: '1px dashed rgba(255, 255, 255, 0.4)',
+                                        borderRadius: '8px',
+                                        padding: '0.4rem 0.8rem',
+                                        color: 'rgba(255, 255, 255, 0.8)',
+                                        fontSize: '0.9rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    + Add UPI ID
+                                </button>
                             )}
                         </motion.div>
                     </div>

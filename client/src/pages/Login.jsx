@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Lock, ArrowLeft, Mail } from 'lucide-react';
+import { User, Lock, ArrowLeft, Mail, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function Login() {
@@ -9,7 +9,8 @@ function Login() {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        name: ''
+        name: '',
+        upi_id: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -160,31 +161,58 @@ function Login() {
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     {!isLogin && (
-                        <div>
-                            <label className="text-sm font-bold" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Name</label>
-                            <div style={{ position: 'relative' }}>
-                                <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                <input
-                                    type="text"
-                                    name="name"
-                                    placeholder="John Doe"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    required={!isLogin}
-                                    style={{
-                                        width: '100%',
-                                        padding: '1rem 1rem 1rem 3rem',
-                                        borderRadius: '12px',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        background: 'rgba(255,255,255,0.05)',
-                                        color: 'white',
-                                        fontSize: '1rem',
-                                        outline: 'none',
-                                        boxSizing: 'border-box'
-                                    }}
-                                />
+                        <>
+                            <div>
+                                <label className="text-sm font-bold" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Name</label>
+                                <div style={{ position: 'relative' }}>
+                                    <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        placeholder="John Doe"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        required={!isLogin}
+                                        style={{
+                                            width: '100%',
+                                            padding: '1rem 1rem 1rem 3rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            color: 'white',
+                                            fontSize: '1rem',
+                                            outline: 'none',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
                             </div>
-                        </div>
+
+                            <div>
+                                <label className="text-sm font-bold" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-main)' }}>UPI ID</label>
+                                <div style={{ position: 'relative' }}>
+                                    <CreditCard size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                    <input
+                                        type="text"
+                                        name="upi_id"
+                                        placeholder="yourname@upi (optional)"
+                                        value={formData.upi_id}
+                                        onChange={handleChange}
+                                        style={{
+                                            width: '100%',
+                                            padding: '1rem 1rem 1rem 3rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            color: 'white',
+                                            fontSize: '1rem',
+                                            outline: 'none',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </>
                     )}
 
                     <div>

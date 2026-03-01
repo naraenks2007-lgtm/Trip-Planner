@@ -194,7 +194,7 @@ const Sidebar = () => {
                 return (
                   <button
                     key={cat.id}
-                    onClick={() => navigate(`/category/${cat.id}`)}
+                    onClick={() => navigate(`/category/${cat.slug}`)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -221,6 +221,10 @@ const Sidebar = () => {
 
         {/* Logout / Footer */}
         <button
+          onClick={() => {
+            localStorage.removeItem('user');
+            navigate('/login');
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -233,7 +237,8 @@ const Sidebar = () => {
             textAlign: 'left',
             transition: 'all 0.2s',
             background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)'
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            cursor: 'pointer'
           }}
         >
           <LogOut size={20} />

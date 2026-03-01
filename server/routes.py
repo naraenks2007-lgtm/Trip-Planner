@@ -290,17 +290,24 @@ def register():
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({"error": "Email and password required"}), 400
     
-    # Check if user already exists
-    if User.query.filter_by(email=data['email']).first():
+    email = data.get('email', '').strip().lower()
+    name = data.get('name', '').strip()
+    phone = data.get('phone', '').strip()
+    upi_id = data.get('upi_id', '').strip()
+    password = data.get('password', '')
+    
+    # Check if user already exists (case-insensitive)
+    if User.query.filter(func.lower(User.email) == email).first():
         return jsonify({"error": "Email already registered"}), 400
     
     # Create new user
     user = User(
-        name=data.get('name', ''),
-        email=data['email'],
-        phone=data.get('phone', '')
+        name=name,
+        email=email,
+        phone=phone,
+        upi_id=upi_id
     )
-    user.set_password(data['password'])
+    user.set_password(password)
     
     db.session.add(user)
     db.session.commit()
@@ -314,9 +321,12 @@ def login():
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({"error": "Email and password required"}), 400
     
-    user = User.query.filter_by(email=data['email']).first()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
     
-    if not user or not user.check_password(data['password']):
+    user = User.query.filter(func.lower(User.email) == email).first()
+    
+    if not user or not user.check_password(password):
         return jsonify({"error": "Invalid email or password"}), 401
     
     return jsonify({"message": "Login successful", "user": user.to_dict()}), 200
