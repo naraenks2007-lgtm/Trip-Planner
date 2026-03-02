@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Bus, Utensils, Map as MapIcon, Search, User, MapPin, Heart, Train, Plane, Navigation, Hotel } from 'lucide-react';
+import { Car, Bus, Utensils, Map as MapIcon, Search, User, MapPin, Heart, Train, Plane, Navigation, Hotel, IndianRupee, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -164,6 +164,40 @@ function Home() {
                         </div>
                     </div>
                 </motion.div>
+            </div>
+
+            <div style={{ padding: '0 1.5rem', marginBottom: '1.5rem' }}>
+                <Link to="/budget-estimation" style={{ textDecoration: 'none' }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%)',
+                            borderRadius: '16px',
+                            padding: '1.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            backdropFilter: 'blur(5px)',
+                            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        <div>
+                            <h3 style={{ color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <IndianRupee size={20} color="#34d399" />
+                                Budget Estimation
+                            </h3>
+                            <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0.25rem 0 0 0', fontSize: '0.875rem' }}>
+                                Plan your trip effectively and track expenses!
+                            </p>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.5rem', borderRadius: '50%' }}>
+                            <ChevronRight size={20} color="white" />
+                        </div>
+                    </motion.div>
+                </Link>
             </div>
 
             <div style={{ padding: '0 1.5rem' }}>

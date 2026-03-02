@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Home, Map, Heart, User, LogOut, Settings, Compass, Car, Bus, Utensils, Map as MapIcon, Train, Plane, Hotel } from 'lucide-react';
+import { Menu, X, Home, Map, Heart, User, LogOut, Settings, Compass, Car, Bus, Utensils, Map as MapIcon, Train, Plane, Hotel, IndianRupee } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import API_BASE from '../config/api';
@@ -171,6 +171,27 @@ const Sidebar = () => {
           >
             <User size={20} color={location.pathname === '/profile' ? '#c4b5fd' : 'rgba(255,255,255,0.7)'} />
             Profile
+          </button>
+
+          <button
+            onClick={() => navigate('/budget-estimation')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              padding: '1rem',
+              borderRadius: '12px',
+              background: location.pathname === '/budget-estimation' ? 'rgba(255,255,255,0.15)' : 'transparent',
+              border: '1px solid',
+              borderColor: location.pathname === '/budget-estimation' ? 'rgba(255,255,255,0.2)' : 'transparent',
+              color: 'white',
+              textAlign: 'left',
+              transition: 'all 0.2s',
+              fontWeight: location.pathname === '/budget-estimation' ? 600 : 400
+            }}
+          >
+            <IndianRupee size={20} color={location.pathname === '/budget-estimation' ? '#c4b5fd' : '#10b981'} />
+            Budget Estimation
           </button>
         </div>
 

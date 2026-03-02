@@ -281,6 +281,100 @@ def fetch_external_data():
     count = fetch_places_from_osm(location)
     return jsonify({"message": f"Fetched {count} new places for {location}"})
 
+@api.route('/estimate-budget', methods=['POST'])
+def estimate_budget():
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
+    budget = float(data.get('budget', 0))
+    transport_mode = data.get('transport_mode', 'car').lower()
+    places = data.get('places', [])
+    
+    # Coordinates mapping from frontend
+    origin_coords = data.get('origin_coords')  # e.g. [longitude, latitude]
+    dest_coords = data.get('dest_coords')      # e.g. [longitude, latitude]
+    
+    distance_km = 0.0
+    
+    # 1. Fetch real distance if coordinates exist
+    if origin_coords and dest_coords:
+        try:
+            # OSRM expects: lon,lat;lon,lat
+            coords_str = f"{origin_coords[0]},{origin_coords[1]};{dest_coords[0]},{dest_coords[1]}"
+            osrm_url = f"http://router.project-osrm.org/route/v1/driving/{coords_str}?overview=false"
+            
+            headers = {'User-Agent': 'TripPlannerApp/1.0'}
+            resp = requests.get(osrm_url, headers=headers, timeout=10)
+            if resp.status_code == 200:
+                osrm_data = resp.json()
+                if osrm_data.get('code') == 'Ok' and osrm_data.get('routes'):
+                    dist_meters = osrm_data['routes'][0]['distance']
+                    distance_km = dist_meters / 1000.0
+            else:
+                print(f"OSRM Error: {resp.status_code} - {resp.text}")
+        except Exception as e:
+            print(f"Failed to fetch distance from OSRM: {e}")
+            
+    # Fallback to manual distance if OSRM fails or coordinates missing
+    if distance_km == 0.0:
+        distance_km = float(data.get('distance', 0))
+    
+    # 2. Transport Cost Calculation Heuristics (using real distance)
+    # Car: avg 12 km/l, fuel approx 100 INR/l -> ~8.3 INR/km. Plus base rental ~1500 INR
+    # Bus (GTFS approximation): Regional transit approx 1.5 - 2 INR/km based on state transport rates.
+    # Train: approx 1.2 INR/km for non-AC, 2.5 INR/km for AC. Averaging 1.8 INR/km.
+    # Flight: fixed high base ~4000 INR + 5 INR/km
+    transport_cost = 0
+    if transport_mode == 'car':
+        transport_cost = (distance_km * 9) + 1500
+    elif transport_mode == 'bus':
+        # Public Transit/Bus heuristic based on actual distance
+        transport_cost = distance_km * 2.0
+    elif transport_mode == 'train':
+        transport_cost = distance_km * 1.8
+    elif transport_mode == 'flight':
+        transport_cost = 4000 + (distance_km * 6)
+    else:
+        transport_cost = distance_km * 5
+        
+    # 3. Ticket Cost Calculation Heuristics
+    tickets_cost = 0
+    for place in places:
+        has_ticket = place.get('hasTicket', False)
+        if has_ticket:
+            price_val = place.get('ticketPrice', '')
+            try:
+                # If user provided a price, use it
+                if price_val:
+                    tickets_cost += float(price_val)
+                else:
+                    # Default average ticket price if checked but no price provided
+                    tickets_cost += 200
+            except ValueError:
+                tickets_cost += 200
+
+    # 4. Miscellaneous Costs (Food, minor local transport, contingencies) - 10% of (Transport + Tickets) + 500 fixed
+    base_calc = transport_cost + tickets_cost
+    misc_cost = (base_calc * 0.10) + 500
+
+    # Total
+    total_estimated = transport_cost + tickets_cost + misc_cost
+    
+    # Check if within budget
+    is_over_budget = total_estimated > budget
+
+    # Format numbers nicely
+    return jsonify({
+        "budget_available": round(budget, 2),
+        "actual_distance_km": round(distance_km, 2),
+        "transport_cost": round(transport_cost, 2),
+        "tickets_cost": round(tickets_cost, 2),
+        "misc_cost": round(misc_cost, 2),
+        "total_estimated_cost": round(total_estimated, 2),
+        "is_over_budget": is_over_budget
+    }), 200
+
 
 # Authentication Routes
 @api.route('/auth/register', methods=['POST'])
@@ -427,6 +521,78 @@ def get_places_overpass():
     except Exception as e:
         print(f"Error fetching from Overpass API: {e}")
         return jsonify({"error": str(e), "elements": []}), 500
+
+
+@api.route('/search-places', methods=['GET'])
+def search_places():
+    """
+    Search for tourist attractions or generic places using Overpass API
+    and attempt to extract fee/charge information if available.
+    Expects: ?q=<City Name or Keyword>
+    """
+    query = request.args.get('q', '').strip()
+    if not query or len(query) < 3:
+        return jsonify([]), 200
+
+    # We use Nominatim to search for the query, and Overpass for detailed fee tags.
+    # To keep it fast, we can ping Nominatim directly, requesting `extratags`.
+    headers = {'User-Agent': 'TripPlannerApp/1.0'}
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {
+            'q': query,
+            'format': 'json',
+            'limit': 10,
+            'addressdetails': 1,
+            'extratags': 1
+        }
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        
+        if resp.status_code != 200:
+            return jsonify({"error": "Search failed"}), 500
+            
+        results = resp.json()
+        places_data = []
+        
+        for item in results:
+            name = item.get('display_name', '').split(',')[0]
+            extra = item.get('extratags', {})
+            
+            # Extract fee/charge logic
+            has_fee = False
+            ticket_price = 0
+            
+            fee_tag = extra.get('fee', '').lower()
+            charge_tag = extra.get('charge', '').lower()
+            
+            if fee_tag == 'yes' or charge_tag != '':
+                has_fee = True
+                
+            # Attempt to extract numeric charge
+            if charge_tag:
+                import re
+                # E.g. "50 INR", "10 EUR", "100" -> extract digits
+                match = re.search(r'(\d+)', charge_tag)
+                if match:
+                    # In real apps we might need currency conversion, for now just extract the number
+                    # Assuming local currency (INR) for Indian places
+                    ticket_price = float(match.group(1))
+            
+            places_data.append({
+                'name': name,
+                'full_address': item.get('display_name'),
+                'type': item.get('type'),
+                'lat': item.get('lat'),
+                'lon': item.get('lon'),
+                'has_fee': has_fee or ticket_price > 0,
+                'ticket_price': ticket_price
+            })
+            
+        return jsonify(places_data), 200
+        
+    except Exception as e:
+        print(f"Error in /search-places: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # ── slug mappings ──────────────────────────────────────────────────────────────

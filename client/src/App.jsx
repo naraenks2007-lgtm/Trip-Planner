@@ -6,6 +6,7 @@ import Detail from "./pages/Detail";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Favorites from "./pages/Favorites";
+import BudgetEstimation from "./pages/BudgetEstimation";
 
 import AnimatedBackground from "./components/AnimatedBackground";
 import Sidebar from "./components/Sidebar";
@@ -23,6 +24,7 @@ function App() {
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/budget-estimation" element={<BudgetEstimation />} />
         </Routes>
       </div>
     </>
