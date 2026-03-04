@@ -5,6 +5,7 @@ import MapComponent from '../components/MapView';
 import StarRating from '../components/StarRating';
 import { motion } from 'framer-motion';
 import { useFavorites } from '../hooks/useFavorites';
+import WeatherWidget from '../components/WeatherWidget';
 
 function Detail() {
     const { id } = useParams();
@@ -159,6 +160,17 @@ function Detail() {
                                         <p className="text-sm" style={{ color: 'white' }}>{place.price_fee}</p>
                                     </div>
                                 </div>
+
+                                {/* Weather Widget */}
+                                {place.latitude && place.longitude && (
+                                    <>
+                                        <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                                        <div className="flex items-center gap-4">
+                                            <WeatherWidget lat={place.latitude} lon={place.longitude} />
+                                        </div>
+                                    </>
+                                )}
+
                                 <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
                                 <div className="flex items-center gap-4">
                                     <Clock style={{ color: 'var(--text-muted)' }} />

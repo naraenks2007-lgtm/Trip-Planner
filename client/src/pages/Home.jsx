@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Bus, Utensils, Map as MapIcon, Search, User, MapPin, Heart, Train, Plane, Navigation, Hotel, IndianRupee, ChevronRight } from 'lucide-react';
+import { Car, Bus, Utensils, Map as MapIcon, Search, User, MapPin, Heart, Train, Plane, Navigation, Hotel, IndianRupee, ChevronRight, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGeolocation } from '../hooks/useGeolocation';
 import LottieAnimation from '../components/LottieAnimation';
+import WeatherWidget from '../components/WeatherWidget';
 import API_BASE from '../config/api';
 
 const iconMap = {
@@ -14,7 +15,8 @@ const iconMap = {
     'map-marked-alt': MapIcon,
     'train': Train,
     'plane': Plane,
-    'hotel': Hotel
+    'hotel': Hotel,
+    'activity': Activity
 };
 
 function Home() {
@@ -360,6 +362,13 @@ function Home() {
                     {isTracking && location && (
                         <div style={{ marginTop: '0.5rem', color: '#6ee7b7', fontSize: '0.8rem', textAlign: 'center' }}>
                             Live GPS Active (Accuracy: ~{Math.round(location.accuracy)}m)
+                        </div>
+                    )}
+
+                    {/* Live Weather Widget */}
+                    {isTracking && location && location.latitude && location.longitude && (
+                        <div style={{ marginTop: '1rem' }}>
+                            <WeatherWidget lat={location.latitude} lon={location.longitude} />
                         </div>
                     )}
                 </form>

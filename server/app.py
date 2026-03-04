@@ -118,6 +118,20 @@ def _auto_seed():
              opening_hours='24 hours', price_fee='Varies',
              crowd_level='Moderate', latitude=12.9941, longitude=80.1709,
              map_link='https://maps.google.com/?q=Chennai+Airport'),
+
+        # Emergency (New additions)
+        dict(category_id=cats['emergency'].id, name='Coimbatore General Hospital',
+             description='Major government hospital in Coimbatore.',
+             location='Trichy Road, Coimbatore', phone='108',
+             opening_hours='24 hours', price_fee='Free/Varies',
+             crowd_level='High', latitude=11.0018, longitude=76.9628,
+             map_link='https://maps.google.com/?q=Coimbatore+General+Hospital'),
+        dict(category_id=cats['emergency'].id, name='Police Commissioner Office',
+             description='Central police headquarters for Coimbatore city.',
+             location='Hosur Road, Coimbatore', phone='100',
+             opening_hours='24 hours', price_fee='Free',
+             crowd_level='Low', latitude=10.9967, longitude=76.9661,
+             map_link='https://maps.google.com/?q=Police+Commissioner+Office+Coimbatore'),
     ]
 
     for p in sample_places:

@@ -6,6 +6,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import StarRating from '../components/StarRating';
 import { useGeolocation, calculateDistance, formatDistance } from '../hooks/useGeolocation';
 import LocationBar from '../components/LocationBar';
+import WeatherWidget from '../components/WeatherWidget';
 import API_BASE from '../config/api';
 
 function ListPage() {
@@ -13,7 +14,9 @@ function ListPage() {
     const navigate = useNavigate();
     const [places, setPlaces] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [categoryName, setCategoryName] = useState('Places');
+    // Derive initial category name from slug
+    const initialName = slug ? (slug.charAt(0).toUpperCase() + slug.slice(1)).replace('-', ' ') : 'Places';
+    const [categoryName, setCategoryName] = useState(initialName);
     const [searchQuery, setSearchQuery] = useState('');
     const [priceFilter, setPriceFilter] = useState('all');
     const [crowdFilter, setCrowdFilter] = useState('all');
@@ -96,6 +99,21 @@ function ListPage() {
         fetchDefaultPlaces();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slug]);
+
+    // ── Auto-trigger live fetch if global GPS is active ───────────────────────
+    useEffect(() => {
+        // If we have GPS location but haven't selected a specific city yet,
+        // and we aren't already loading something live, trigger the live fetch.
+        if (location && !locationInfo && !liveLoading) {
+            handleLocationSelect({
+                lat: location.latitude,
+                lon: location.longitude,
+                label: 'Your Location',
+                cityName: null
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location, slug, !!locationInfo]);
 
     // ── Derive geolocation coords for distance calc ───────────────────────────
     // Use locationInfo if set, else the useGeolocation hook's position
@@ -230,6 +248,11 @@ function ListPage() {
                     onLocationSelect={handleLocationSelect}
                     activeLabel={locationInfo?.label}
                 />
+
+                {/* Weather Data for the Searched/GPS Location */}
+                {effectiveLocation && effectiveLocation.latitude && effectiveLocation.longitude && (
+                    <WeatherWidget lat={effectiveLocation.latitude} lon={effectiveLocation.longitude} />
+                )}
 
                 {/* Live fetch loading overlay */}
                 {liveLoading && (
@@ -581,9 +604,32 @@ function ListPage() {
                     </p>
                 )}
                 {!loading && places.length === 0 && !searchQuery && (
-                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '2rem' }}>
-                        No places found in this category.
-                    </p>
+                    <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                            No places found in this category.
+                        </p>
+                        {slug === 'emergency' && (
+                            <div className="glass-card" style={{ padding: '1.2rem', margin: '1rem' }}>
+                                <p style={{ color: '#c4b5fd', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                    <b>Tip:</b> Emergency services work best with your live location.
+                                </p>
+                                <button
+                                    onClick={requestLocation}
+                                    style={{
+                                        padding: '0.6rem 1.2rem',
+                                        borderRadius: '30px',
+                                        background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontWeight: 600,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Enable Live Location
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
         </div>

@@ -236,16 +236,19 @@ def fetch_places_from_osm(location="Paris"):
 
 @api.route('/seed', methods=['POST'])
 def seed_db():
-    # Always create categories if missing
-    if not Category.query.first():
-        cats = [
-            Category(name="Car Rentals", slug="car-rentals", icon="car"),
-            Category(name="Bus Timings", slug="bus-timings", icon="bus"),
-            Category(name="Restaurants", slug="restaurants", icon="utensils"),
-            Category(name="Tourist Places", slug="tourist-places", icon="map-marked-alt"),
-        ]
-        db.session.add_all(cats)
-        db.session.commit()
+    # Make sure all required categories exist
+    required_cats = [
+        {"name": "Car Rentals", "slug": "car-rentals", "icon": "car"},
+        {"name": "Bus Timings", "slug": "bus-timings", "icon": "bus"},
+        {"name": "Restaurants", "slug": "restaurants", "icon": "utensils"},
+        {"name": "Tourist Places", "slug": "tourist-places", "icon": "map-marked-alt"},
+        {"name": "Emergency", "slug": "emergency", "icon": "activity"},
+    ]
+    
+    for c_data in required_cats:
+        if not Category.query.filter_by(slug=c_data['slug']).first():
+            db.session.add(Category(**c_data))
+    db.session.commit()
 
     # Always try to fetch data if there are no places
     if not Place.query.first():
@@ -254,12 +257,10 @@ def seed_db():
         
         # If still empty (fetch failed), add fallback mock data
         if not Place.query.first():
-            # ... existing mock data code ...
-            # (I will keep the existing mock data adding as fallback, but for brevity I am rewriting the flow)
              places = []
              # Car Rentals
              places.append(Place(
-                category_id=1, # Assuming ID 1 exists
+                category_id=1, 
                 name="Speedy Wheels",
                 description="Affordable and fast car rentals for your city trip.",
                 price_fee="$50/day",
@@ -272,6 +273,38 @@ def seed_db():
             ))
              db.session.add_all(places)
              db.session.commit()
+
+    # Specifically check for emergency places
+    emergency_cat = Category.query.filter_by(slug='emergency').first()
+    if emergency_cat and not Place.query.filter_by(category_id=emergency_cat.id).first():
+        print("Adding fallback emergency places...")
+        db.session.add(Place(
+            category_id=emergency_cat.id,
+            name='Coimbatore General Hospital',
+            description='Major government hospital in Coimbatore.',
+            location='Trichy Road, Coimbatore',
+            phone='108',
+            opening_hours='24 hours',
+            price_fee='Free/Varies',
+            crowd_level='High',
+            latitude=11.0018,
+            longitude=76.9628,
+            map_link='https://maps.google.com/?q=Coimbatore+General+Hospital'
+        ))
+        db.session.add(Place(
+            category_id=emergency_cat.id,
+            name='Police Commissioner Office',
+            description='Central police headquarters for Coimbatore city.',
+            location='Hosur Road, Coimbatore',
+            phone='100',
+            opening_hours='24 hours',
+            price_fee='Free',
+            crowd_level='Low',
+            latitude=10.9967,
+            longitude=76.9661,
+            map_link='https://maps.google.com/?q=Police+Commissioner+Office+Coimbatore'
+        ))
+        db.session.commit()
     
     return jsonify({"message": "Database check/seed completed!"})
 
@@ -602,10 +635,11 @@ SLUG_CONFIG = {
     'restaurants':    ('restaurant',         '[\"amenity\"=\"restaurant\"]',             'Restaurant'),
     'car-rentals':    ('car rental',         '[\"amenity\"=\"car_rental\"]',              'Car Rental'),
     'bus-timings':    ('bus station',        '[\"amenity\"=\"bus_station\"]',             'Bus Station'),
-    'tourist-places': ('tourist attraction', '[\"tourism\"~\"attraction|museum|viewpoint\"]', 'Tourist Place'),
+    'tourist-places': ('tourist attraction', '["tourism"="attraction"]|["tourism"="museum"]|["tourism"="viewpoint"]', 'Tourist Place'),
     'hotels':         ('hotel',              '[\"tourism\"=\"hotel\"]',                  'Hotel'),
     'trains':         ('railway station',    '[\"railway\"=\"station\"]',                'Train Station'),
-    'flights':        ('airport',            '[\"aeroway\"~\"aerodrome|terminal\"]',      'Airport'),
+    'flights':        ('airport',            '["aeroway"="aerodrome"]|["aeroway"="terminal"]',      'Airport'),
+    'emergency':      ('emergency service',  '["amenity"="hospital"]|["amenity"="police"]|["amenity"="fire_station"]', 'Emergency Service'),
 }
 
 
@@ -670,11 +704,17 @@ def _overpass_bounding_box(lat_f, lon_f, osm_tag, radius_km=8, limit=40):
     Used when Nominatim returns < 5 named places.
     """
     r = radius_km / 111.0
+    tags = osm_tag.split('|')
+    statements = []
+    for tag in tags:
+        statements.append(f"  node{tag}({lat_f-r},{lon_f-r},{lat_f+r},{lon_f+r});\n  way{tag}({lat_f-r},{lon_f-r},{lat_f+r},{lon_f+r});")
+    
+    query_body = "\n".join(statements)
+    
     query = f"""
 [out:json][timeout:30];
 (
-  node{osm_tag}({lat_f-r},{lon_f-r},{lat_f+r},{lon_f+r});
-  way{osm_tag}({lat_f-r},{lon_f-r},{lat_f+r},{lon_f+r});
+{query_body}
 );
 out center {limit};
 """
@@ -733,6 +773,10 @@ def _parse_nominatim(results, label):
                    extra.get('contact:mobile') or 
                    'Contact details at location')
         
+        # Inject emergency numbers if none found online
+        if label == 'Emergency Service' and phone == 'Contact details at location':
+            phone = 'Natl Emergency: 112, Police: 100, Ambulance: 108'
+        
         opening = extra.get('opening_hours') or 'Open daily'
         website = extra.get('website') or extra.get('contact:website') or ''
         cuisine = extra.get('cuisine') or ''
@@ -789,14 +833,16 @@ def _parse_overpass(elements, label, ref_lat, ref_lon):
                    tags.get('phone:mobile') or 
                    'Contact details at location')
         
+        # Inject emergency numbers if none found online
+        if label == 'Emergency Service' and phone == 'Contact details at location':
+            phone = 'Natl Emergency: 112, Police: 100, Ambulance: 108'
+        
         opening = tags.get('opening_hours') or 'Open daily'
         website = tags.get('website') or tags.get('contact:website') or ''
         cuisine = tags.get('cuisine') or ''
         desc_parts = []
         if cuisine:
             desc_parts.append(f"Cuisine: {cuisine.replace(';', ', ').title()}")
-        if website:
-            desc_parts.append(f"Website: {website}")
         description = '. '.join(desc_parts) if desc_parts else f"Real-time {label} data from OpenStreetMap."
 
         places.append(_build_place(
@@ -812,6 +858,32 @@ def _parse_overpass(elements, label, ref_lat, ref_lon):
             category_name= f"{label}s",
         ))
     return places
+
+
+@api.route('/weather', methods=['GET'])
+def get_weather():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    
+    if not lat or not lon:
+        return jsonify({"error": "Missing lat or lon parameters"}), 400
+        
+    try:
+        url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "current": "temperature_2m,weather_code",
+        }
+        resp = requests.get(url, params=params, timeout=10)
+        
+        if resp.status_code == 200:
+            return jsonify(resp.json()), 200
+        else:
+            return jsonify({"error": "Failed to fetch weather data"}), resp.status_code
+    except Exception as e:
+        print(f"Weather API Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # ── slug resolver ─────────────────────────────────────────────────────────────

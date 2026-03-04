@@ -1,79 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useGeolocationContext } from '../context/GeolocationContext';
 
 /**
- * Custom hook for accessing user's geolocation
- * @returns {Object} - { location: {latitude, longitude, accuracy}, error, loading, requestLocation }
+ * Custom hook for accessing user's geolocation (now routes to Context)
+ * @returns {Object} - { location: {latitude, longitude, accuracy}, error, loading, requestLocation, stopLocation, isTracking }
  */
 export function useGeolocation() {
-    const [location, setLocation] = useState(null);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [watchId, setWatchId] = useState(null);
-
-    const requestLocation = () => {
-        if (!navigator.geolocation) {
-            setError('Geolocation is not supported by your browser');
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        // Clear existing watch if any
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-        }
-
-        const id = navigator.geolocation.watchPosition(
-            (position) => {
-                setLocation({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy,
-                    timestamp: position.timestamp
-                });
-                setLoading(false);
-            },
-            (err) => {
-                setError(err.message);
-                setLoading(false);
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            }
-        );
-
-        setWatchId(id);
-    };
-
-    const stopLocation = () => {
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            setWatchId(null);
-        }
-        setLocation(null);
-        setLoading(false);
-    };
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-            }
-        };
-    }, [watchId]);
-
-    return {
-        location,
-        error,
-        loading,
-        requestLocation,
-        stopLocation,
-        isTracking: watchId !== null
-    };
+    return useGeolocationContext();
 }
 
 /**
